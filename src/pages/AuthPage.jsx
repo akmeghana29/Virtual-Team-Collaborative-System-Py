@@ -1,14 +1,85 @@
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import professionals from '../assets/images/professionals.jpg'
+import { apiRequest } from '../services/api'
 
 export default function AuthPage() {
   const [mode, setMode] = useState('signin')
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirm: '',
+  })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
   const navigate = useNavigate()
 
-  const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  const handle = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value })
+
+  const handleAuth = async () => {
+    setError('')
+
+    if (mode === 'signup') {
+      if (!form.name.trim()) {
+        setError('Please enter your full name')
+        return
+      }
+
+      if (form.password !== form.confirm) {
+        setError('Passwords do not match')
+        return
+      }
+    }
+
+    if (!form.email.trim() || !form.password) {
+      setError('Please enter your email and password')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const endpoint =
+        mode === 'signup'
+          ? '/api/auth/register'
+          : '/api/auth/login'
+
+      const payload =
+        mode === 'signup'
+          ? {
+              name: form.name,
+              email: form.email,
+              password: form.password,
+            }
+          : {
+              email: form.email,
+              password: form.password,
+            }
+
+      const data = await apiRequest(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+
+      navigate(
+        mode === 'signup'
+          ? '/onboarding'
+          : '/real-dashboard'
+      )
+    } catch (err) {
+      setError(err.message || 'Authentication failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const inputStyle = {
     width: '100%',
@@ -72,17 +143,32 @@ export default function AuthPage() {
         <img
           src={professionals}
           alt=""
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
         />
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(39,55,77,0.72)' }} />
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          padding: '60px',
-        }}>
+
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(39,55,77,0.72)',
+          }}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            padding: '60px',
+          }}
+        >
           <div
             onClick={() => navigate('/')}
             style={{
@@ -105,63 +191,80 @@ export default function AuthPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <p style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '11px',
-              fontWeight: '400',
-              color: '#C9B59C',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              marginBottom: '16px',
-            }}>
+            <p
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '11px',
+                fontWeight: '400',
+                color: '#C9B59C',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                marginBottom: '16px',
+              }}
+            >
               Virtual Team Collaborative Workspace
             </p>
-            <h2 style={{
-              fontFamily: '"Bodoni Moda", Georgia, serif',
-              fontSize: 'clamp(28px, 3vw, 44px)',
-              fontWeight: '400',
-              color: 'white',
-              lineHeight: '1.25',
-              marginBottom: '20px',
-            }}>
-              Where teams come<br />together to build<br />something great.
+
+            <h2
+              style={{
+                fontFamily: '"Bodoni Moda", Georgia, serif',
+                fontSize: 'clamp(28px, 3vw, 44px)',
+                fontWeight: '400',
+                color: 'white',
+                lineHeight: '1.25',
+                marginBottom: '20px',
+              }}
+            >
+              Where teams come<br />
+              together to build<br />
+              something great.
             </h2>
-            <p style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '12px',
-              fontWeight: '300',
-              color: 'rgba(255,255,255,0.5)',
-              lineHeight: '1.8',
-              maxWidth: '360px',
-            }}>
+
+            <p
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '12px',
+                fontWeight: '300',
+                color: 'rgba(255,255,255,0.5)',
+                lineHeight: '1.8',
+                maxWidth: '360px',
+              }}
+            >
               Manage tasks, share resources, track deadlines and collaborate in real time from anywhere in the world.
             </p>
           </motion.div>
         </div>
       </div>
 
-      <div style={{
-        width: '45%',
-        backgroundColor: '#F9F8F6',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '40px 64px',
-        overflowY: 'auto',
-      }}>
-        <div style={{
-          display: 'inline-flex',
-          backgroundColor: '#EFE9E3',
-          borderRadius: '999px',
-          padding: '4px',
-          marginBottom: '16px',
-          marginTop: '60px',
-          alignSelf: 'flex-start',
-        }}>
+      <div
+        style={{
+          width: '45%',
+          backgroundColor: '#F9F8F6',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '40px 64px',
+          overflowY: 'auto',
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            backgroundColor: '#EFE9E3',
+            borderRadius: '999px',
+            padding: '4px',
+            marginBottom: '16px',
+            marginTop: '60px',
+            alignSelf: 'flex-start',
+          }}
+        >
           {['signin', 'signup'].map((m) => (
             <button
               key={m}
-              onClick={() => setMode(m)}
+              onClick={() => {
+                setMode(m)
+                setError('')
+              }}
               style={{
                 padding: '8px 28px',
                 borderRadius: '999px',
@@ -192,23 +295,28 @@ export default function AuthPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-              <h1 style={{
-                fontFamily: '"Bodoni Moda", Georgia, serif',
-                fontSize: 'clamp(26px, 2.5vw, 36px)',
-                fontWeight: '400',
-                color: '#27374D',
-                marginBottom: '8px',
-                lineHeight: '1.2',
-              }}>
+              <h1
+                style={{
+                  fontFamily: '"Bodoni Moda", Georgia, serif',
+                  fontSize: 'clamp(26px, 2.5vw, 36px)',
+                  fontWeight: '400',
+                  color: '#27374D',
+                  marginBottom: '8px',
+                  lineHeight: '1.2',
+                }}
+              >
                 Welcome back
               </h1>
-              <p style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '12px',
-                fontWeight: '300',
-                color: '#9AA6B2',
-                marginBottom: '28px',
-              }}>
+
+              <p
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '12px',
+                  fontWeight: '300',
+                  color: '#9AA6B2',
+                  marginBottom: '28px',
+                }}
+              >
                 Sign in to continue to your workspace
               </p>
 
@@ -222,10 +330,11 @@ export default function AuthPage() {
                     value={form.email}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
+
                 <div>
                   <label style={labelStyle}>Password</label>
                   <input
@@ -235,30 +344,40 @@ export default function AuthPage() {
                     value={form.password}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: '11px',
-                    fontWeight: '300',
-                    color: '#C9B59C',
-                    letterSpacing: '0.04em',
-                  }}>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '11px',
+                      fontWeight: '300',
+                      color: '#C9B59C',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
                     Forgot password?
                   </button>
                 </div>
 
+                {error && mode === 'signin' && (
+                  <p style={{ color: '#C0392B', fontSize: '12px', margin: 0 }}>
+                    {error}
+                  </p>
+                )}
+
                 <motion.button
                   whileHover={{ backgroundColor: '#1a2535' }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/real-dashboard')}
+                  onClick={handleAuth}
+                  disabled={loading}
                   style={{
                     width: '100%',
                     padding: '14px',
@@ -266,7 +385,8 @@ export default function AuthPage() {
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
                     fontFamily: 'Poppins, sans-serif',
                     fontSize: '13px',
                     fontWeight: '400',
@@ -274,12 +394,14 @@ export default function AuthPage() {
                     transition: 'background-color 0.2s ease',
                   }}
                 >
-                  Sign In
+                  {loading ? 'Signing In...' : 'Sign In'}
                 </motion.button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ flex: 1, height: '1px', backgroundColor: '#D9CFC7' }} />
-                  <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '11px', fontWeight: '300', color: '#9AA6B2' }}>or</span>
+                  <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '11px', fontWeight: '300', color: '#9AA6B2' }}>
+                    or
+                  </span>
                   <div style={{ flex: 1, height: '1px', backgroundColor: '#D9CFC7' }} />
                 </div>
 
@@ -318,23 +440,28 @@ export default function AuthPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-              <h1 style={{
-                fontFamily: '"Bodoni Moda", Georgia, serif',
-                fontSize: 'clamp(26px, 2.5vw, 36px)',
-                fontWeight: '400',
-                color: '#27374D',
-                marginBottom: '8px',
-                lineHeight: '1.2',
-              }}>
+              <h1
+                style={{
+                  fontFamily: '"Bodoni Moda", Georgia, serif',
+                  fontSize: 'clamp(26px, 2.5vw, 36px)',
+                  fontWeight: '400',
+                  color: '#27374D',
+                  marginBottom: '8px',
+                  lineHeight: '1.2',
+                }}
+              >
                 Create your account
               </h1>
-              <p style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '12px',
-                fontWeight: '300',
-                color: '#9AA6B2',
-                marginBottom: '28px',
-              }}>
+
+              <p
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '12px',
+                  fontWeight: '300',
+                  color: '#9AA6B2',
+                  marginBottom: '28px',
+                }}
+              >
                 Join thousands of teams already collaborating
               </p>
 
@@ -348,10 +475,11 @@ export default function AuthPage() {
                     value={form.name}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
+
                 <div>
                   <label style={labelStyle}>Email</label>
                   <input
@@ -361,10 +489,11 @@ export default function AuthPage() {
                     value={form.email}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
+
                 <div>
                   <label style={labelStyle}>Password</label>
                   <input
@@ -374,10 +503,11 @@ export default function AuthPage() {
                     value={form.password}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
+
                 <div>
                   <label style={labelStyle}>Confirm Password</label>
                   <input
@@ -387,15 +517,22 @@ export default function AuthPage() {
                     value={form.confirm}
                     onChange={handle}
                     style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#C9B59C'}
-                    onBlur={e => e.target.style.borderColor = '#D9CFC7'}
+                    onFocus={(e) => (e.target.style.borderColor = '#C9B59C')}
+                    onBlur={(e) => (e.target.style.borderColor = '#D9CFC7')}
                   />
                 </div>
+
+                {error && mode === 'signup' && (
+                  <p style={{ color: '#C0392B', fontSize: '12px', margin: 0 }}>
+                    {error}
+                  </p>
+                )}
 
                 <motion.button
                   whileHover={{ backgroundColor: '#1a2535' }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/real-dashboard')}
+                  onClick={handleAuth}
+                  disabled={loading}
                   style={{
                     width: '100%',
                     padding: '14px',
@@ -403,7 +540,8 @@ export default function AuthPage() {
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
                     fontFamily: 'Poppins, sans-serif',
                     fontSize: '13px',
                     fontWeight: '400',
@@ -411,12 +549,14 @@ export default function AuthPage() {
                     transition: 'background-color 0.2s ease',
                   }}
                 >
-                  Create Account
+                  {loading ? 'Creating Account...' : 'Create Account'}
                 </motion.button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ flex: 1, height: '1px', backgroundColor: '#D9CFC7' }} />
-                  <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '11px', fontWeight: '300', color: '#9AA6B2' }}>or</span>
+                  <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '11px', fontWeight: '300', color: '#9AA6B2' }}>
+                    or
+                  </span>
                   <div style={{ flex: 1, height: '1px', backgroundColor: '#D9CFC7' }} />
                 </div>
 
@@ -450,19 +590,25 @@ export default function AuthPage() {
           )}
         </AnimatePresence>
 
-        <p style={{
-          fontFamily: 'Poppins, sans-serif',
-          fontSize: '11px',
-          fontWeight: '300',
-          color: '#9AA6B2',
-          textAlign: 'center',
-          marginTop: '32px',
-          marginBottom: '40px',
-        }}>
+        <p
+          style={{
+            fontFamily: 'Poppins, sans-serif',
+            fontSize: '11px',
+            fontWeight: '300',
+            color: '#9AA6B2',
+            textAlign: 'center',
+            marginTop: '32px',
+            marginBottom: '40px',
+          }}
+        >
           By continuing, you agree to our{' '}
-          <span style={{ color: '#C9B59C', cursor: 'pointer' }}>Terms of Service</span>
+          <span style={{ color: '#C9B59C', cursor: 'pointer' }}>
+            Terms of Service
+          </span>
           {' '}and{' '}
-          <span style={{ color: '#C9B59C', cursor: 'pointer' }}>Privacy Policy</span>
+          <span style={{ color: '#C9B59C', cursor: 'pointer' }}>
+            Privacy Policy
+          </span>
         </p>
       </div>
     </div>
